@@ -374,6 +374,7 @@ export class ChartManager {
             table.innerHTML = `
                 <thead>
                     <tr>
+                        <th style="width: 100px;">썸네일</th>
                         <th>제목</th>
                         <th>업로드</th>
                         <th>조회수</th>
@@ -385,6 +386,11 @@ export class ChartManager {
                 <tbody>
                     ${channelData.videos.map(video => `
                         <tr class="video-row" onclick="window.open('https://www.youtube.com/watch?v=${video.id}', '_blank')" style="cursor: pointer;">
+                            <td>
+                                <img src="${video.snippet.thumbnails.default.url}" 
+                                     alt="썸네일" 
+                                     style="width: 80px; height: 45px; object-fit: cover; border-radius: 4px;">
+                            </td>
                             <td class="video-title-cell">
                                 <div class="video-title-text">${video.snippet.title}</div>
                             </td>
@@ -676,7 +682,23 @@ export class ChartManager {
                     chip.style.backgroundColor = this.hexToRgba(color, 0.15);
                     chip.style.color = color;
                     chip.style.border = `1px solid ${this.hexToRgba(color, 0.3)}`;
+                    chip.style.cursor = 'pointer';
                     chip.textContent = `#${k.word} (${k.count})`;
+                    
+                    // 유튜브 검색 링크 추가
+                    chip.addEventListener('click', () => {
+                        const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(k.word)}`;
+                        window.open(searchUrl, '_blank');
+                    });
+                    
+                    // 호버 효과
+                    chip.addEventListener('mouseenter', () => {
+                        chip.style.backgroundColor = this.hexToRgba(color, 0.25);
+                    });
+                    chip.addEventListener('mouseleave', () => {
+                        chip.style.backgroundColor = this.hexToRgba(color, 0.15);
+                    });
+                    
                     chipsContainer.appendChild(chip);
                 });
             }

@@ -52,13 +52,26 @@
             </section>
 
             <!-- Loading State -->
-            <div id="loadingState" class="hidden">
-                <div class="loader"></div>
-                <p>채널 데이터를 분석하고 있습니다...</p>
+            <div id="loadingState" class="hidden" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(10px);">
+                <div class="loader" style="width: 80px; height: 80px; border-width: 6px;"></div>
+                <p style="margin-top: 2rem; font-size: 1.2rem; font-weight: 500; color: var(--text-primary);">채널 데이터를 분석하고 있습니다...</p>
+                <p style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--text-secondary);">잠시만 기다려 주세요.</p>
             </div>
 
             <!-- Dashboard Section -->
             <section id="dashboard" class="dashboard-section hidden">
+                <!-- Filter Section -->
+                <div class="card" style="text-align: center;">
+                    <div class="tooltip-bubble" style="margin: 0 auto 1rem auto;">
+                        💡 비교할 영상 종류를 선택하세요.
+                    </div>
+                    <div class="filter-buttons" style="justify-content: center; margin-top: 0; gap: 1rem;">
+                        <button class="filter-btn active" data-filter="all" style="padding: 1rem 2.5rem; font-size: 1.1rem; font-weight: 600;">전체</button>
+                        <button class="filter-btn" data-filter="short" style="padding: 1rem 2.5rem; font-size: 1.1rem; font-weight: 600;">📱 숏폼만</button>
+                        <button class="filter-btn" data-filter="long" style="padding: 1rem 2.5rem; font-size: 1.1rem; font-weight: 600;">🎬 롱폼만</button>
+                    </div>
+                </div>
+
                 
                 <!-- 0. Overall Score & Ranking -->
                 <div class="card">
@@ -77,15 +90,7 @@
                 <!-- 1. Core Metrics Table -->
                 <div class="card metrics-card">
                     <div class="card-header">
-                        <div class="tooltip-bubble">
-                            💡 비교할 영상 종류를 선택하세요.
-                        </div>
                         <h2>📊 핵심 지표 비교</h2>
-                        <div class="filter-buttons">
-                            <button class="filter-btn active" data-filter="all">전체</button>
-                            <button class="filter-btn" data-filter="short">📱 숏폼만 (≤3분)</button>
-                            <button class="filter-btn" data-filter="long">🎬 롱폼만 (>3분)</button>
-                        </div>
                     </div>
                     <div class="table-container">
                         <table id="metricsTable">
@@ -128,38 +133,43 @@
                                 <h3>📊 평가 기준 상세</h3>
                                 <div class="info-list">
                                     <div class="info-item-row">
+                                        <span class="icon">👥</span>
+                                        <div class="text">
+                                            <strong>구독자 규모</strong>
+                                            <p>채널의 구독자 수<br>
+                                            <span style="font-size: 0.8rem; opacity: 0.8;">100만 구독자 = 100점</span></p>
+                                        </div>
+                                    </div>
+                                    <div class="info-item-row">
                                         <span class="icon">🔥</span>
                                         <div class="text">
-                                            <strong>성과 (Performance)</strong>
-                                            <p>최근 30개 영상의 평균 조회수를 기반으로 평가합니다.</p>
+                                            <strong>조회수 파워</strong>
+                                            <p>최근 30개 영상의 평균 조회수<br>
+                                            <span style="font-size: 0.8rem; opacity: 0.8;">50만 조회수 = 100점</span></p>
                                         </div>
                                     </div>
                                     <div class="info-item-row">
-                                        <span class="icon">🤝</span>
+                                        <span class="icon">📹</span>
                                         <div class="text">
-                                            <strong>참여 (Engagement)</strong>
-                                            <p>조회수 대비 좋아요 및 댓글 비율을 분석합니다.</p>
+                                            <strong>영상수</strong>
+                                            <p>채널에 업로드된 총 영상 개수<br>
+                                            <span style="font-size: 0.8rem; opacity: 0.8;">업로드 빈도 및 규칙성</span></p>
                                         </div>
                                     </div>
                                     <div class="info-item-row">
-                                        <span class="icon">👁️</span>
+                                        <span class="icon">💬</span>
                                         <div class="text">
-                                            <strong>규모 (Scale)</strong>
-                                            <p>구독자 수와 채널의 총 누적 조회수를 반영합니다.</p>
+                                            <strong>참여도</strong>
+                                            <p>조회수 대비 좋아요 비율<br>
+                                            <span style="font-size: 0.8rem; opacity: 0.8;">5% 비율 = 100점</span></p>
                                         </div>
                                     </div>
                                     <div class="info-item-row">
                                         <span class="icon">📈</span>
                                         <div class="text">
-                                            <strong>성장 (Growth)</strong>
-                                            <p>최근 영상들의 조회수 상승/하락 추세를 평가합니다.</p>
-                                        </div>
-                                    </div>
-                                    <div class="info-item-row">
-                                        <span class="icon">📅</span>
-                                        <div class="text">
-                                            <strong>활동 (Activity)</strong>
-                                            <p>영상의 업로드 빈도와 규칙성을 평가합니다.</p>
+                                            <strong>최근성과</strong>
+                                            <p>최근 영상 vs 이전 영상 조회수 증감<br>
+                                            <span style="font-size: 0.8rem; opacity: 0.8;">50% 상승 = 100점</span></p>
                                         </div>
                                     </div>
                                 </div>
@@ -280,33 +290,72 @@
 
         <!-- Score Criteria Info Modal -->
         <div id="scoreModal" class="modal hidden">
-            <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-content" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
                 <h2>📊 종합 점수 평가 기준</h2>
                 <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
-                    각 채널은 5가지 항목을 기준으로 100점 만점으로 평가됩니다.
+                    각 채널은 5가지 항목을 기준으로 0~100점으로 평가되며, 가중치를 적용하여 최종 점수가 산출됩니다.
                 </p>
                 
-                <div style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem;">
-                    <div class="score-criteria-item">
-                        <div style="font-weight: 700; color: #3b82f6; margin-bottom: 0.25rem;">1. 규모 (30%)</div>
-                        <div style="font-size: 0.9rem; color: var(--text-secondary);">구독자 수를 기준으로 평가합니다. (100만 명 이상 시 만점)</div>
+                <div style="display: flex; flex-direction: column; gap: 1.2rem; margin-bottom: 1.5rem;">
+                    <!-- 1. 규모 -->
+                    <div class="score-criteria-item" style="background: rgba(59, 130, 246, 0.05); padding: 1rem; border-radius: 8px; border-left: 3px solid #3b82f6;">
+                        <div style="font-weight: 700; color: #3b82f6; margin-bottom: 0.5rem; font-size: 1rem;">📊 1. 구독자 규모 (가중치 30%)</div>
+                        <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">
+                            <strong style="color: var(--text-primary);">산출 방식:</strong> (구독자 수 ÷ 1,000,000) × 100<br>
+                            <strong style="color: var(--text-primary);">기준점:</strong> 100만 구독자 = 100점<br>
+                            <strong style="color: var(--text-primary);">예시:</strong> 50만 구독자 → 50점 / 200만 구독자 → 100점 (상한)
+                        </div>
                     </div>
-                    <div class="score-criteria-item">
-                        <div style="font-weight: 700; color: #8b5cf6; margin-bottom: 0.25rem;">2. 성과 (30%)</div>
-                        <div style="font-size: 0.9rem; color: var(--text-secondary);">최근 영상들의 평균 조회수를 기준으로 평가합니다. (50만 회 이상 시 만점)</div>
+
+                    <!-- 2. 성과 -->
+                    <div class="score-criteria-item" style="background: rgba(139, 92, 246, 0.05); padding: 1rem; border-radius: 8px; border-left: 3px solid #8b5cf6;">
+                        <div style="font-weight: 700; color: #8b5cf6; margin-bottom: 0.5rem; font-size: 1rem;">🔥 2. 조회수 파워 (가중치 30%)</div>
+                        <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">
+                            <strong style="color: var(--text-primary);">산출 방식:</strong> (평균 조회수 ÷ 500,000) × 100<br>
+                            <strong style="color: var(--text-primary);">기준:</strong> 최근 30개 영상의 평균 조회수<br>
+                            <strong style="color: var(--text-primary);">기준점:</strong> 50만 조회수 = 100점<br>
+                            <strong style="color: var(--text-primary);">예시:</strong> 평균 25만 → 50점 / 평균 100만 → 100점 (상한)
+                        </div>
                     </div>
-                    <div class="score-criteria-item">
-                        <div style="font-weight: 700; color: #ec4899; margin-bottom: 0.25rem;">3. 성장 (20%)</div>
-                        <div style="font-size: 0.9rem; color: var(--text-secondary);">최근 조회수 상승세를 평가합니다. (상승폭이 클수록 고득점)</div>
+
+                    <!-- 3. 성장 -->
+                    <div class="score-criteria-item" style="background: rgba(236, 72, 153, 0.05); padding: 1rem; border-radius: 8px; border-left: 3px solid #ec4899;">
+                        <div style="font-weight: 700; color: #ec4899; margin-bottom: 0.5rem; font-size: 1rem;">📈 3. 최근 성과 (가중치 20%)</div>
+                        <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">
+                            <strong style="color: var(--text-primary);">산출 방식:</strong> 50 + 조회수 등락률<br>
+                            <strong style="color: var(--text-primary);">계산:</strong> 최근 15개 vs 이전 15개 평균 조회수 비교<br>
+                            <strong style="color: var(--text-primary);">공식:</strong> ((최근15 평균 - 이전15 평균) ÷ 이전15 평균) × 100<br>
+                            <strong style="color: var(--text-primary);">예시:</strong> 50% 증가 → 100점 / 변동없음 → 50점 / 50% 감소 → 0점
+                        </div>
                     </div>
-                    <div class="score-criteria-item">
-                        <div style="font-weight: 700; color: #22c55e; margin-bottom: 0.25rem;">4. 참여 (10%)</div>
-                        <div style="font-size: 0.9rem; color: var(--text-secondary);">조회수 대비 좋아요 비율을 평가합니다. (5% 이상 시 만점)</div>
+
+                    <!-- 4. 참여도 -->
+                    <div class="score-criteria-item" style="background: rgba(34, 197, 94, 0.05); padding: 1rem; border-radius: 8px; border-left: 3px solid #22c55e;">
+                        <div style="font-weight: 700; color: #22c55e; margin-bottom: 0.5rem; font-size: 1rem;">💬 4. 참여도 (가중치 10%)</div>
+                        <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">
+                            <strong style="color: var(--text-primary);">산출 방식:</strong> (평균 좋아요 비율 ÷ 0.05) × 100<br>
+                            <strong style="color: var(--text-primary);">계산:</strong> 각 영상의 (좋아요 수 ÷ 조회수) 평균<br>
+                            <strong style="color: var(--text-primary);">기준점:</strong> 5% 비율 = 100점<br>
+                            <strong style="color: var(--text-primary);">예시:</strong> 2.5% → 50점 / 10% → 100점 (상한)
+                        </div>
                     </div>
-                    <div class="score-criteria-item">
-                        <div style="font-weight: 700; color: #fbbf24; margin-bottom: 0.25rem;">5. 활동 (10%)</div>
-                        <div style="font-size: 0.9rem; color: var(--text-secondary);">영상 업로드 주기를 평가합니다. (1일 1영상 시 만점)</div>
+
+                    <!-- 5. 활동성 -->
+                    <div class="score-criteria-item" style="background: rgba(251, 191, 36, 0.05); padding: 1rem; border-radius: 8px; border-left: 3px solid #fbbf24;">
+                        <div style="font-weight: 700; color: #fbbf24; margin-bottom: 0.5rem; font-size: 1rem;">⏱️ 5. 활동성 (가중치 10%)</div>
+                        <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">
+                            <strong style="color: var(--text-primary);">산출 방식:</strong> 100 - (평균 업로드 주기 × 3.3)<br>
+                            <strong style="color: var(--text-primary);">계산:</strong> 최근 영상들 간의 평균 간격(일)<br>
+                            <strong style="color: var(--text-primary);">예시:</strong> 매일 업로드 → 96.7점 / 3일 1개 → 90점 / 30일 1개 → 1점
+                        </div>
                     </div>
+                </div>
+
+                <div style="background: rgba(59, 130, 246, 0.1); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                    <strong style="color: var(--text-primary);">📌 최종 점수 계산:</strong><br>
+                    <span style="font-size: 0.9rem; color: var(--text-secondary);">
+                        (규모×0.3) + (조회수 파워×0.3) + (성장×0.2) + (참여×0.1) + (활동×0.1)
+                    </span>
                 </div>
 
                 <div class="modal-actions">
