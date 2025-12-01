@@ -16,6 +16,19 @@ export class ChannelAnalyzer {
             ? avgViews / parseInt(stats.subscriberCount)
             : 0;
 
+        // 좋아요 비율 (참여도) 계산 - 조회수 대비 좋아요 비율
+        let totalEngagementRate = 0;
+        let validVideoCount = 0;
+        videos.forEach(v => {
+            const views = parseInt(v.statistics.viewCount || 0);
+            const likes = parseInt(v.statistics.likeCount || 0);
+            if (views > 0) {
+                totalEngagementRate += (likes / views);
+                validVideoCount++;
+            }
+        });
+        const engagementRate = validVideoCount > 0 ? (totalEngagementRate / validVideoCount) : 0;
+
         // 조회수 등락률 (최근 5개 vs 그 전 5개 비교)
         // 영상이 시간순(최신순)으로 정렬되어 있다고 가정
         const recentGroup = videos.slice(0, 5);
@@ -58,6 +71,7 @@ export class ChannelAnalyzer {
             videoCount: parseInt(stats.videoCount || 0),
             avgViews: Math.round(avgViews),
             engagement: engagement.toFixed(2),
+            engagementRate,
             growthRate: growthRate.toFixed(1),
             uploadFrequency, // 업로드 주기 추가
             publishedAt: new Date(channelData.snippet.publishedAt).toLocaleDateString('ko-KR'),
@@ -82,18 +96,33 @@ export class ChannelAnalyzer {
     }
 
     // 2. Radar Chart 데이터 (5가지 항목 평가)
+    // 2. Radar Chart 데이터 (5가지 항목 평가)
     calculateRadarScores(metrics) {
-        // 모든 채널을 동일 기준으로 평가하기 위해 정규화 필요
-        // 각 항목은 0~100 점수로 변환
-        
+        // 1. 구독자 규모 (100만 = 100점)
+        const subScore = Math.min((metrics.subscribers / 1000000) * 100, 100);
+
+        // 2. 조회수 파워 (50만 = 100점)
+        const viewScore = Math.min((metrics.avgViews / 500000) * 100, 100);
+
+        // 3. 영상 수 (1000개 = 100점)
+        const videoCountScore = Math.min((metrics.videoCount / 1000) * 100, 100);
+
+        // 4. 참여도 (5% = 100점)
+        const engagementScore = Math.min((metrics.engagementRate / 0.05) * 100, 100);
+
+        // 5. 최근 성과 (50% 상승 = 100점)
+        const growthRate = parseFloat(metrics.growthRate) || 0;
+        let growthScore = 50 + growthRate; // 0% 성장 = 50점
+        growthScore = Math.max(0, Math.min(growthScore, 100));
+
         return {
             channelTitle: metrics.channelTitle,
             scores: {
-                '구독자 규모': this.normalizeLog(metrics.subscribers, 1000, 10000000),
-                '조회수 파워': this.normalizeLog(metrics.totalViews, 100000, 1000000000),
-                '영상 수': this.normalizeLog(metrics.videoCount, 10, 5000),
-                '참여도': this.normalizeLog(metrics.engagement, 0.01, 50), // 로그스케일 적용
-                '최근 성과': this.normalizeLog(metrics.avgViews, 1000, 10000000)
+                '구독자 규모': Math.round(subScore),
+                '조회수 파워': Math.round(viewScore),
+                '영상수': Math.round(videoCountScore),
+                '참여도': Math.round(engagementScore),
+                '최근성과': Math.round(growthScore)
             }
         };
     }

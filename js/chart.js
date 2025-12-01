@@ -14,7 +14,7 @@ export class ChartManager {
         if (this.radarChart) this.radarChart.destroy();
 
         // 모든 채널의 데이터셋 준비
-        const labels = ['구독자 규모', '조회수 파워', '영상 수', '참여도', '최근 성과'];
+        const labels = ['구독자 규모', '조회수 파워', '영상수', '참여도', '최근성과'];
         const colors = [
             { bg: 'rgba(59, 130, 246, 0.2)', border: 'rgba(59, 130, 246, 1)' },
             { bg: 'rgba(139, 92, 246, 0.2)', border: 'rgba(139, 92, 246, 1)' },
