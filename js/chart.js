@@ -3,6 +3,7 @@ export class ChartManager {
         this.radarChart = null;
         this.contentTypeChart = null;
         this.lengthVsViewsChart = null;
+        this.growthTrendChart = null;
     }
 
     // 2. Radar Chart 렌더링
@@ -90,92 +91,6 @@ export class ChartManager {
         });
     }
 
-    // 3. Content Type Chart 렌더링 (숏폼 vs 롱폼)
-    renderContentTypeChart(metricsDataList) {
-        const ctx = document.getElementById('contentTypeChart');
-        if (!ctx) return;
-
-        if (this.contentTypeChart) this.contentTypeChart.destroy();
-
-        const labels = metricsDataList.map(data => data.channelTitle);
-        const shortFormData = metricsDataList.map(data => parseFloat(data.shortFormRatio));
-        const longFormData = metricsDataList.map(data => parseFloat(data.longFormRatio));
-
-        this.contentTypeChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: '📱 숏폼 (≤3분)',
-                        data: shortFormData,
-                        backgroundColor: 'rgba(59, 130, 246, 0.7)',
-                        borderColor: 'rgba(59, 130, 246, 1)',
-                        borderWidth: 2
-                    },
-                    {
-                        label: '🎬 롱폼 (>3분)',
-                        data: longFormData,
-                        backgroundColor: 'rgba(139, 92, 246, 0.7)',
-                        borderColor: 'rgba(139, 92, 246, 1)',
-                        borderWidth: 2
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 100,
-                        ticks: {
-                            color: '#94a3b8',
-                            callback: function(value) {
-                                return value + '%';
-                            }
-                        },
-                        grid: {
-                            color: 'rgba(255, 255, 255, 0.1)'
-                        }
-                    },
-                    x: {
-                        ticks: {
-                            color: '#f8fafc',
-                            font: {
-                                size: 11
-                            }
-                        },
-                        grid: {
-                            display: false
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: {
-                            color: '#f8fafc',
-                            padding: 15,
-                            font: {
-                                size: 12
-                            }
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: (context) => {
-                                const label = context.dataset.label || '';
-                                const value = context.parsed.y.toFixed(1);
-                                return `${label}: ${value}%`;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    }
-
     // 7. Video Length vs Views Scatter Chart 렌더링
     renderLengthVsViewsChart(analyzedData) {
         const ctx = document.getElementById('lengthVsViewsChart');
@@ -192,7 +107,8 @@ export class ChartManager {
                 return {
                     x: (durationSec / 60).toFixed(1), // 분 단위
                     y: views,
-                    title: video.snippet.title // 툴팁용
+                    title: video.snippet.title, // 툴팁용
+                    videoId: video.id // 링크 이동용
                 };
             }).filter(p => p.y > 0 && p.x > 0); // 유효한 데이터만
 
@@ -261,6 +177,17 @@ export class ChartManager {
                                 const point = context.raw;
                                 return `${point.title.substring(0, 20)}... (${point.x}분, ${this.formatNumber(point.y)}회)`;
                             }
+                        }
+                    }
+                },
+                onClick: (e, elements) => {
+                    if (elements.length > 0) {
+                        const element = elements[0];
+                        const datasetIndex = element.datasetIndex;
+                        const index = element.index;
+                        const videoId = this.lengthVsViewsChart.data.datasets[datasetIndex].data[index].videoId;
+                        if (videoId) {
+                            window.open(`https://www.youtube.com/watch?v=${videoId}`, '_blank');
                         }
                     }
                 }
@@ -564,6 +491,7 @@ export class ChartManager {
                     </div>
                 </div>
             `;
+
             container.appendChild(card);
         });
     }
@@ -572,7 +500,7 @@ export class ChartManager {
         return list.findIndex(item => item.channelTitle === title) % 5;
     }
 
-    // 8. Growth Trend Chart 렌더링
+    // 8. Growth Trend Chart 렌더링 (최근 30일)
     renderGrowthTrendChart(analyzedData) {
         const ctx = document.getElementById('growthTrendChart');
         if (!ctx) return;
@@ -581,28 +509,76 @@ export class ChartManager {
 
         const colors = ['#3b82f6', '#8b5cf6', '#ec4899', '#22c55e', '#fbbf24'];
         
-        const datasets = analyzedData.map((data, index) => {
-            // 최근 30개 영상 (최신순 -> 과거순이므로 역순으로 정렬하여 과거 -> 최신으로 표시)
-            const recentVideos = data.videos.slice(0, 30).reverse();
-            const points = recentVideos.map(video => parseInt(video.statistics.viewCount || 0));
-            const labels = recentVideos.map(video => video.snippet.title);
+        // 1. 최근 30일 날짜 기준 설정
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        // 헬퍼 함수: 날짜 객체를 YYYY-MM-DD 문자열로 변환
+        const getDateStr = (date) => {
+            const year = date.getFullYear();
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+
+        // 2. 모든 채널의 최근 30일 영상 수집 및 날짜(YYYY-MM-DD) 추출
+        const allDates = new Set();
+        const channelDataMap = analyzedData.map((data, index) => {
+            // 최근 30일 이내 영상 필터링 & 날짜 오름차순 정렬
+            const recentVideos = data.videos
+                .filter(v => new Date(v.snippet.publishedAt) >= thirtyDaysAgo)
+                .sort((a, b) => new Date(a.snippet.publishedAt) - new Date(b.snippet.publishedAt));
+
+            recentVideos.forEach(v => {
+                const date = new Date(v.snippet.publishedAt);
+                allDates.add(getDateStr(date));
+            });
 
             return {
                 label: data.metrics.channelTitle,
-                data: points,
-                borderColor: colors[index % colors.length],
-                backgroundColor: this.hexToRgba(colors[index % colors.length], 0.1),
-                borderWidth: 2,
-                tension: 0.4, // 부드러운 곡선
-                pointRadius: 3,
-                pointHoverRadius: 6,
-                fill: true,
-                titles: labels // 툴팁용
+                videos: recentVideos,
+                color: colors[index % colors.length]
             };
         });
 
-        // X축 레이블 (1 ~ 30)
-        const labels = Array.from({length: 30}, (_, i) => i + 1);
+        // 3. 날짜 라벨 정렬 (YYYY-MM-DD 기준)
+        const labels = Array.from(allDates).sort();
+
+        // 4. 데이터셋 구성
+        const datasets = channelDataMap.map(ch => {
+            const dataPoints = labels.map(dateLabel => {
+                const videosOnDate = ch.videos.filter(v => {
+                    const d = new Date(v.snippet.publishedAt);
+                    return getDateStr(d) === dateLabel;
+                });
+
+                if (videosOnDate.length === 0) return { x: dateLabel, y: null };
+
+                const bestVideo = videosOnDate.reduce((prev, current) => {
+                    return (parseInt(prev.statistics.viewCount) > parseInt(current.statistics.viewCount)) ? prev : current;
+                });
+
+                return {
+                    x: dateLabel,
+                    y: parseInt(bestVideo.statistics.viewCount || 0),
+                    title: bestVideo.snippet.title,
+                    videoId: bestVideo.id
+                };
+            });
+
+            return {
+                label: ch.label,
+                data: dataPoints,
+                borderColor: ch.color,
+                backgroundColor: this.hexToRgba(ch.color, 0.1),
+                borderWidth: 2,
+                tension: 0.4,
+                pointRadius: 4,
+                pointHoverRadius: 7,
+                fill: false,
+                spanGaps: true
+            };
+        });
 
         this.growthTrendChart = new Chart(ctx, {
             type: 'line',
@@ -611,13 +587,22 @@ export class ChartManager {
                 responsive: true,
                 maintainAspectRatio: false,
                 interaction: {
-                    mode: 'index',
-                    intersect: false,
+                    mode: 'nearest',
+                    intersect: true,
+                    axis: 'x'
                 },
                 scales: {
                     x: {
-                        display: false, // X축 레이블 숨김 (너무 많음)
-                        grid: { display: false }
+                        grid: { display: false },
+                        title: { display: true, text: '날짜 (최근 30일)', color: '#94a3b8' },
+                        ticks: { 
+                            color: '#94a3b8',
+                            callback: function(val, index) {
+                                const label = this.getLabelForValue(val);
+                                const [y, m, d] = label.split('-');
+                                return `${m}.${d}`;
+                            }
+                        }
                     },
                     y: {
                         beginAtZero: true,
@@ -633,12 +618,25 @@ export class ChartManager {
                     tooltip: {
                         callbacks: {
                             title: (context) => {
-                                const index = context[0].dataIndex;
-                                return context[0].dataset.titles[index];
+                                const label = context[0].label;
+                                const [y, m, d] = label.split('-');
+                                return `${m}.${d}`;
                             },
                             label: (context) => {
-                                return `${context.dataset.label}: ${this.formatNumber(context.raw)}회`;
+                                const point = context.raw;
+                                return `${context.dataset.label}: ${this.formatNumber(point.y)}회 - ${point.title}`;
                             }
+                        }
+                    }
+                },
+                onClick: (e, elements) => {
+                    if (elements.length > 0) {
+                        const element = elements[0];
+                        const datasetIndex = element.datasetIndex;
+                        const index = element.index;
+                        const point = this.growthTrendChart.data.datasets[datasetIndex].data[index];
+                        if (point && point.videoId) {
+                            window.open(`https://www.youtube.com/watch?v=${point.videoId}`, '_blank');
                         }
                     }
                 }
