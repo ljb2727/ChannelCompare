@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Channel Compare | 유튜브 채널 비교 분석</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="glass-header">
+            <div class="logo">
+                <i class="fa-solid fa-scale-balanced"></i>
+                <span>Channel Compare</span>
+            </div>
+            <div class="header-actions">
+                <button id="apiKeyBtn" class="icon-btn" title="API 설정">
+                    <i class="fa-solid fa-key"></i> API 키 설정
+                </button>
+            </div>
+        </header>
+
+        <main>
+            <!-- Hero / Search Section -->
+            <section class="search-section">
+                <h1>유튜브 채널 비교 분석</h1>
+                <p>최대 5개의 채널을 추가하여 상세 데이터를 비교해보세요.</p>
+                
+                <div class="search-box-container">
+                    <div class="search-box">
+                        <i class="fa-brands fa-youtube search-icon"></i>
+                        <input type="text" id="searchInput" placeholder="채널명 또는 채널 핸들(@handle) 입력">
+                        <button id="searchBtn">검색</button>
+                    </div>
+                </div>
+
+                <!-- Selected Channels List -->
+                <div id="selectedChannels" class="selected-channels">
+                    <!-- Channel chips will be added here -->
+                    <div class="placeholder-chip">비교할 채널을 검색하여 추가하세요 (0/5)</div>
+                </div>
+
+                <button id="compareBtn" class="compare-btn" disabled>
+                    분석 시작하기
+                </button>
+            </section>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="hidden">
+                <div class="loader"></div>
+                <p>채널 데이터를 분석하고 있습니다...</p>
+            </div>
+
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="dashboard-section hidden">
+                
+                <!-- 1. Core Metrics Table -->
+                <div class="card metrics-card">
+                    <div class="card-header">
+                        <h2>📊 핵심 지표 비교</h2>
+                    </div>
+                    <div class="table-container">
+                        <table id="metricsTable">
+                            <thead>
+                                <tr>
+                                    <th>채널</th>
+                                    <th>구독자</th>
+                                    <th>총 조회수</th>
+                                    <th>동영상 수</th>
+                                    <th>평균 조회수 (최근 30개)</th>
+                                    <th>
+                                        조회수 등락 
+                                        <i class="fa-solid fa-circle-info info-icon" id="engagementInfo" title="등락률 정보"></i>
+                                    </th>
+                                    <th>평균 업로드 주기</th>
+                                    <th>채널 개설일</th>
+                                    <th>📱 숏폼 / 🎬 롱폼</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Data rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 2. Visual Analysis Row (Radar + Scatter) -->
+                <div class="charts-grid">
+                    <!-- Radar Chart -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>🕸️ 채널 밸런스</h2>
+                            <p>5가지 항목 상대 평가</p>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="radarChart"></canvas>
+                        </div>
+                        <div class="chart-info">
+                            <div class="info-item">
+                                <span class="label">🔥 최근 성과</span>
+                                <span class="desc">최근 30개 영상 평균 조회수</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">🤝 참여도</span>
+                                <span class="desc">구독자 대비 조회수 비율</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">👁️ 조회수 파워</span>
+                                <span class="desc">누적 총 조회수 규모</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Scatter Chart -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>📏 영상 길이 vs 조회수</h2>
+                            <p>영상 길이(분)에 따른 조회수 분포 (로그 스케일)</p>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="lengthVsViewsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Pattern Analysis Row (Content Type + Upload Pattern) -->
+                <div class="charts-grid" style="margin-top: 2rem;">
+                    <!-- Content Type -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>📊 콘텐츠 유형</h2>
+                            <p>숏폼(≤3분) vs 롱폼(>3분) 비율</p>
+                        </div>
+                        <div class="chart-container" style="height: 300px;">
+                            <canvas id="contentTypeChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Upload Pattern -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>📅 업로드 패턴</h2>
+                            <p>주로 영상을 올리는 요일과 시간</p>
+                        </div>
+                        <div id="heatmapContainer" class="heatmap-container">
+                            <!-- Heatmap grids will be injected here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. Text Analysis (Keywords) -->
+                <div class="card" style="margin-top: 2rem;">
+                    <div class="card-header">
+                        <h2>🔑 주요 키워드</h2>
+                        <p>영상 제목과 설명에서 자주 사용되는 단어</p>
+                    </div>
+                    <div id="keywordsContainer" class="keywords-grid">
+                        <!-- Keyword chips will be injected here -->
+                    </div>
+                </div>
+
+                <!-- 5. Best Videos (Compact Gallery) -->
+                <div class="card" style="margin-top: 2rem;">
+                    <div class="card-header">
+                        <h2>🏆 채널별 대표 영상</h2>
+                        <p>최근 영상 중 조회수가 가장 높은 영상</p>
+                    </div>
+                    <div id="bestVideosContainer" class="video-grid-compact">
+                        <!-- Video cards will be injected here -->
+                    </div>
+                </div>
+
+            </section>
+        </main>
+
+        <!-- API Key Modal -->
+        <div id="apiModal" class="modal hidden">
+            <div class="modal-content">
+                <h2>API 설정</h2>
+                <p>YouTube Data API Key가 필요합니다.</p>
+                <div class="input-group">
+                    <input type="text" id="apiKeyInput" placeholder="API Key 입력">
+                </div>
+                <div class="modal-actions">
+                    <button id="closeApiBtn" class="btn-secondary">닫기</button>
+                    <button id="saveApiBtn" class="btn-primary">저장</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Growth Rate Info Modal -->
+        <div id="engagementModal" class="modal hidden">
+            <div class="modal-content">
+                <h2>📈 조회수 등락이란?</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                    최근 업로드한 영상들이 과거 영상들에 비해 조회수가 상승하고 있는지 보여주는 지표입니다.
+                </p>
+                <div style="background: rgba(34, 197, 94, 0.1); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border-left: 3px solid var(--success-color);">
+                    <strong>계산 방식:</strong><br>
+                    (최근 5개 평균 조회수 - 그 전 5개 평균 조회수) ÷ 그 전 평균 조회수
+                </div>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">
+                    <strong>해석:</strong><br>
+                    • <span style="color: var(--success-color);"><strong>+ (양수):</strong></span> 최근 영상들의 조회수가 상승세입니다.<br>
+                    • <span style="color: var(--danger-color);"><strong>- (음수):</strong></span> 최근 영상들의 조회수가 하락세입니다.<br>
+                    • <strong>0%:</strong> 조회수 변동이 거의 없습니다.
+                </p>
+                <div class="modal-actions">
+                    <button id="closeEngagementBtn" class="btn-primary">확인</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
