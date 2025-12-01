@@ -166,6 +166,55 @@ export class ChannelAnalyzer {
         };
     }
 
+    // 종합 점수 계산
+    calculateChannelScore(metrics, videos) {
+        // 1. 규모 점수 (30%) - 구독자 수 기준 (100만 = 100점)
+        const subScore = Math.min((metrics.subscribers / 1000000) * 100, 100);
+
+        // 2. 성과 점수 (30%) - 평균 조회수 기준 (50만 = 100점)
+        const viewScore = Math.min((metrics.avgViews / 500000) * 100, 100);
+
+        // 3. 성장 점수 (20%) - 조회수 등락률 (-50% ~ +50% -> 0 ~ 100점)
+        const growthRate = parseFloat(metrics.growthRate) || 0;
+        let growthScore = 50 + growthRate;
+        growthScore = Math.max(0, Math.min(growthScore, 100));
+
+        // 4. 참여 점수 (10%) - 조회수 대비 좋아요 비율 (5% = 100점)
+        let totalEngagement = 0;
+        videos.forEach(v => {
+            const views = parseInt(v.statistics.viewCount || 0);
+            const likes = parseInt(v.statistics.likeCount || 0);
+            if (views > 0) totalEngagement += (likes / views);
+        });
+        const avgEngagement = videos.length > 0 ? (totalEngagement / videos.length) : 0;
+        const engagementScore = Math.min((avgEngagement / 0.05) * 100, 100);
+
+        // 5. 활동 점수 (10%) - 업로드 주기 (1일 1영상 = 100점, 30일 1영상 = 0점)
+        // uploadFrequency가 "3.5" 같은 문자열이거나 숫자일 수 있음
+        const frequency = parseFloat(metrics.uploadFrequency) || 30;
+        const activityScore = Math.max(0, 100 - (frequency * 3.3));
+
+        // 가중치 적용
+        const totalScore = (
+            (subScore * 0.3) +
+            (viewScore * 0.3) +
+            (growthScore * 0.2) +
+            (engagementScore * 0.1) +
+            (activityScore * 0.1)
+        );
+
+        return {
+            total: Math.round(totalScore),
+            details: {
+                scale: Math.round(subScore),
+                performance: Math.round(viewScore),
+                growth: Math.round(growthScore),
+                engagement: Math.round(engagementScore),
+                activity: Math.round(activityScore)
+            }
+        };
+    }
+
     // 숫자를 한국식으로 포맷팅 (천, 만, 억)
     formatNumber(num) {
         if (num >= 100000000) {

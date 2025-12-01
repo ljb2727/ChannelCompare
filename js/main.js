@@ -10,6 +10,7 @@ class ChannelCompare {
         this.selectedChannels = [];
         this.maxChannels = 5;
         this.analyzedData = [];
+        this.currentFilter = 'all'; // 필터 상태: 'all', 'short', 'long'
 
         this.init();
     }
@@ -58,6 +59,21 @@ class ChannelCompare {
             }
         });
 
+        // Score Info Modal
+        document.getElementById('scoreInfoBtn').addEventListener('click', () => {
+            document.getElementById('scoreModal').classList.remove('hidden');
+        });
+
+        document.getElementById('closeScoreBtn').addEventListener('click', () => {
+            document.getElementById('scoreModal').classList.add('hidden');
+        });
+
+        document.getElementById('scoreModal').addEventListener('click', (e) => {
+            if (e.target.id === 'scoreModal') {
+                document.getElementById('scoreModal').classList.add('hidden');
+            }
+        });
+
         // Search
         document.getElementById('searchBtn').addEventListener('click', () => {
             this.searchChannel();
@@ -72,6 +88,18 @@ class ChannelCompare {
         // Compare
         document.getElementById('compareBtn').addEventListener('click', () => {
             this.compareChannels();
+        });
+
+        // Filter buttons (delegated event)
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('filter-btn')) {
+                const filter = e.target.dataset.filter;
+                this.applyFilter(filter);
+                
+                // Update active state
+                document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+                e.target.classList.add('active');
+            }
         });
     }
 
@@ -200,13 +228,16 @@ class ChannelCompare {
                 const uploadPattern = this.analyzer.analyzeUploadPattern(videos);
                 const bestVideo = this.analyzer.findBestVideo(videos);
                 const keywords = this.analyzer.analyzeKeywords(videos);
+                const score = this.analyzer.calculateChannelScore(metrics, videos);
 
                 this.analyzedData.push({
                     metrics,
                     radarScores,
                     uploadPattern,
                     bestVideo,
-                    keywords
+                    keywords,
+                    videos,
+                    score // 점수 추가
                 });
             }
 
@@ -223,46 +254,106 @@ class ChannelCompare {
     renderDashboard() {
         document.getElementById('dashboard').classList.remove('hidden');
 
+        // 필터링된 데이터 사용
+        const displayData = this.getFilteredData();
+
+        // 0. Overall Scores
+        const scoreDataList = displayData.map(data => ({
+            channelTitle: data.metrics.channelTitle,
+            score: data.score
+        }));
+        this.chartManager.renderOverallScores(scoreDataList);
+
         // 1. Metrics Table
         const tableBody = document.querySelector('#metricsTable tbody');
-        tableBody.innerHTML = this.analyzedData
+        tableBody.innerHTML = displayData
             .map(data => this.analyzer.generateMetricsTableRow(data.metrics))
             .join('');
 
         // 2. Radar Chart
-        const radarDataList = this.analyzedData.map(data => data.radarScores);
+        const radarDataList = displayData.map(data => data.radarScores);
         this.chartManager.renderRadarChart(radarDataList);
 
-        // 3. Content Type Chart
-        const contentTypeDataList = this.analyzedData.map(data => data.metrics);
-        this.chartManager.renderContentTypeChart(contentTypeDataList);
-
         // 7. Length vs Views Chart
-        this.chartManager.renderLengthVsViewsChart(this.analyzedData);
+        this.chartManager.renderLengthVsViewsChart(displayData);
+
+        // 8. Growth Trend Chart
+        this.chartManager.renderGrowthTrendChart(displayData);
 
         // 4. Upload Pattern Heatmap
-        const heatmapDataList = this.analyzedData.map(data => ({
+        const heatmapDataList = displayData.map(data => ({
             channelTitle: data.metrics.channelTitle,
             pattern: data.uploadPattern
         }));
         this.chartManager.renderHeatmaps(heatmapDataList);
 
         // 5. Best Videos
-        const bestVideos = this.analyzedData.map(data => ({
+        const bestVideos = displayData.map(data => ({
             channelTitle: data.metrics.channelTitle,
             videoData: data.bestVideo
         }));
         this.chartManager.renderBestVideos(bestVideos);
 
         // 6. Keywords
-        const keywordDataList = this.analyzedData.map(data => ({
+        const keywordDataList = displayData.map(data => ({
             channelTitle: data.metrics.channelTitle,
             keywords: data.keywords
         }));
         this.chartManager.renderKeywords(keywordDataList);
 
+        // 7. Recent Videos (최근 5개)
+        const recentVideosData = displayData.map(data => ({
+            channelTitle: data.metrics.channelTitle,
+            videos: data.videos.slice(0, 5) // 최근 5개만
+        }));
+        this.chartManager.renderRecentVideos(recentVideosData);
+
         // 스크롤을 대시보드로 이동
         document.getElementById('dashboard').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // 필터 적용
+    applyFilter(filter) {
+        this.currentFilter = filter;
+        if (this.analyzedData.length > 0) {
+            this.renderDashboard();
+        }
+    }
+
+    // 필터링된 데이터 생성
+    getFilteredData() {
+        return this.analyzedData.map(data => {
+            let filteredVideos = data.videos;
+
+            // 필터링 (3분 = 180초 기준)
+            if (this.currentFilter === 'short') {
+                filteredVideos = data.videos.filter(v => 
+                    this.analyzer.parseDuration(v.contentDetails?.duration) <= 180
+                );
+            } else if (this.currentFilter === 'long') {
+                filteredVideos = data.videos.filter(v => 
+                    this.analyzer.parseDuration(v.contentDetails?.duration) > 180
+                );
+            }
+
+            // 필터링된 영상으로 지표 재계산
+            const filteredMetrics = this.analyzer.analyzeMetrics(data.metrics.channelData, filteredVideos);
+            const filteredRadarScores = this.analyzer.calculateRadarScores(filteredMetrics);
+            const filteredUploadPattern = this.analyzer.analyzeUploadPattern(filteredVideos);
+            const filteredBestVideo = this.analyzer.findBestVideo(filteredVideos);
+            const filteredKeywords = this.analyzer.analyzeKeywords(filteredVideos);
+            const filteredScore = this.analyzer.calculateChannelScore(filteredMetrics, filteredVideos);
+
+            return {
+                metrics: filteredMetrics,
+                radarScores: filteredRadarScores,
+                uploadPattern: filteredUploadPattern,
+                bestVideo: filteredBestVideo,
+                keywords: filteredKeywords,
+                videos: filteredVideos,
+                score: filteredScore
+            };
+        });
     }
 }
 

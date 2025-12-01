@@ -418,6 +418,234 @@ export class ChartManager {
         return num.toString();
     }
 
+    // 7. Recent Videos 렌더링
+    renderRecentVideos(recentVideosData) {
+        const container = document.getElementById('recentVideosContainer');
+        if (!container) return;
+
+        container.innerHTML = '';
+        const colors = ['#3b82f6', '#8b5cf6', '#ec4899', '#22c55e', '#fbbf24'];
+
+        recentVideosData.forEach((channelData, index) => {
+            const color = colors[index % colors.length];
+            const channelSection = document.createElement('div');
+            channelSection.className = 'channel-recent-videos';
+            
+            // 채널 헤더
+            const header = document.createElement('div');
+            header.className = 'recent-videos-header';
+            header.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <div style="width: 12px; height: 12px; background: ${color}; border-radius: 2px;"></div>
+                    <span style="font-weight: 600; color: var(--text-primary);">${channelData.channelTitle}</span>
+                </div>
+            `;
+
+            // 영상 테이블
+            const table = document.createElement('table');
+            table.className = 'recent-videos-table';
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>제목</th>
+                        <th>업로드</th>
+                        <th>조회수</th>
+                        <th>좋아요</th>
+                        <th>댓글</th>
+                        <th>길이</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${channelData.videos.map(video => `
+                        <tr class="video-row" onclick="window.open('https://www.youtube.com/watch?v=${video.id}', '_blank')" style="cursor: pointer;">
+                            <td class="video-title-cell">
+                                <div class="video-title-text">${video.snippet.title}</div>
+                            </td>
+                            <td>${this.formatDate(video.snippet.publishedAt)}</td>
+                            <td>${this.formatNumber(parseInt(video.statistics.viewCount || 0))}</td>
+                            <td>${this.formatNumber(parseInt(video.statistics.likeCount || 0))}</td>
+                            <td>${this.formatNumber(parseInt(video.statistics.commentCount || 0))}</td>
+                            <td>${this.formatDuration(video.contentDetails?.duration)}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            `;
+
+            channelSection.appendChild(header);
+            channelSection.appendChild(table);
+            container.appendChild(channelSection);
+        });
+    }
+
+    // 날짜 포맷 (예: "2일 전", "1주 전")
+    formatDate(dateString) {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffTime = Math.abs(now - date);
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 0) return '오늘';
+        if (diffDays === 1) return '1일 전';
+        if (diffDays < 7) return `${diffDays}일 전`;
+        if (diffDays < 30) return `${Math.floor(diffDays / 7)}주 전`;
+        if (diffDays < 365) return `${Math.floor(diffDays / 30)}개월 전`;
+        return `${Math.floor(diffDays / 365)}년 전`;
+    }
+
+    // Duration 포맷 (PT1H2M3S -> 1:02:03)
+    formatDuration(duration) {
+        if (!duration) return '-';
+        const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+        if (!match) return '-';
+
+        const hours = parseInt(match[1] || 0);
+        const minutes = parseInt(match[2] || 0);
+        const seconds = parseInt(match[3] || 0);
+
+        if (hours > 0) {
+            return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+        return `${minutes}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    // 0. Overall Scores 렌더링
+    renderOverallScores(scoreDataList) {
+        const container = document.getElementById('overallScoreContainer');
+        if (!container) return;
+
+        container.innerHTML = '';
+        const colors = ['#3b82f6', '#8b5cf6', '#ec4899', '#22c55e', '#fbbf24'];
+
+        // 점수 높은 순으로 정렬 및 순위 부여
+        const sortedData = [...scoreDataList]
+            .filter(data => data.score && typeof data.score.total !== 'undefined') // 유효한 데이터만 필터링
+            .sort((a, b) => b.score.total - a.score.total);
+
+        sortedData.forEach((data, index) => {
+            const color = colors[this.getOriginalIndex(data.channelTitle, scoreDataList)];
+            const rank = index + 1;
+            let medal = '';
+            if (rank === 1) medal = '🥇';
+            else if (rank === 2) medal = '🥈';
+            else if (rank === 3) medal = '🥉';
+
+            const card = document.createElement('div');
+            card.className = 'score-card';
+            card.style.borderTop = `4px solid ${color}`;
+            
+            card.innerHTML = `
+                <div class="score-header">
+                    <div class="rank-badge">${medal || rank + '위'}</div>
+                    <div class="channel-info">
+                        <div class="channel-name" style="color: ${color}">${data.channelTitle}</div>
+                        <div class="total-score">${data.score.total}점</div>
+                    </div>
+                </div>
+                <div class="score-details">
+                    <div class="score-item">
+                        <span>규모</span>
+                        <div class="score-bar"><div class="fill" style="width: ${data.score.details.scale}%; background: ${color}"></div></div>
+                    </div>
+                    <div class="score-item">
+                        <span>성과</span>
+                        <div class="score-bar"><div class="fill" style="width: ${data.score.details.performance}%; background: ${color}"></div></div>
+                    </div>
+                    <div class="score-item">
+                        <span>성장</span>
+                        <div class="score-bar"><div class="fill" style="width: ${data.score.details.growth}%; background: ${color}"></div></div>
+                    </div>
+                    <div class="score-item">
+                        <span>참여</span>
+                        <div class="score-bar"><div class="fill" style="width: ${data.score.details.engagement}%; background: ${color}"></div></div>
+                    </div>
+                    <div class="score-item">
+                        <span>활동</span>
+                        <div class="score-bar"><div class="fill" style="width: ${data.score.details.activity}%; background: ${color}"></div></div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    getOriginalIndex(title, list) {
+        return list.findIndex(item => item.channelTitle === title) % 5;
+    }
+
+    // 8. Growth Trend Chart 렌더링
+    renderGrowthTrendChart(analyzedData) {
+        const ctx = document.getElementById('growthTrendChart');
+        if (!ctx) return;
+
+        if (this.growthTrendChart) this.growthTrendChart.destroy();
+
+        const colors = ['#3b82f6', '#8b5cf6', '#ec4899', '#22c55e', '#fbbf24'];
+        
+        const datasets = analyzedData.map((data, index) => {
+            // 최근 30개 영상 (최신순 -> 과거순이므로 역순으로 정렬하여 과거 -> 최신으로 표시)
+            const recentVideos = data.videos.slice(0, 30).reverse();
+            const points = recentVideos.map(video => parseInt(video.statistics.viewCount || 0));
+            const labels = recentVideos.map(video => video.snippet.title);
+
+            return {
+                label: data.metrics.channelTitle,
+                data: points,
+                borderColor: colors[index % colors.length],
+                backgroundColor: this.hexToRgba(colors[index % colors.length], 0.1),
+                borderWidth: 2,
+                tension: 0.4, // 부드러운 곡선
+                pointRadius: 3,
+                pointHoverRadius: 6,
+                fill: true,
+                titles: labels // 툴팁용
+            };
+        });
+
+        // X축 레이블 (1 ~ 30)
+        const labels = Array.from({length: 30}, (_, i) => i + 1);
+
+        this.growthTrendChart = new Chart(ctx, {
+            type: 'line',
+            data: { labels, datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                scales: {
+                    x: {
+                        display: false, // X축 레이블 숨김 (너무 많음)
+                        grid: { display: false }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        ticks: {
+                            color: '#f8fafc',
+                            callback: (value) => this.formatNumber(value)
+                        }
+                    }
+                },
+                plugins: {
+                    legend: { labels: { color: '#f8fafc' } },
+                    tooltip: {
+                        callbacks: {
+                            title: (context) => {
+                                const index = context[0].dataIndex;
+                                return context[0].dataset.titles[index];
+                            },
+                            label: (context) => {
+                                return `${context.dataset.label}: ${this.formatNumber(context.raw)}회`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
     // 6. Keywords 렌더링
     renderKeywords(keywordDataList) {
         const container = document.getElementById('keywordsContainer');

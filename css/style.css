@@ -43,9 +43,6 @@ body {
     border-radius: 16px;
     border: 1px solid var(--border-color);
     margin-bottom: 2rem;
-    position: sticky;
-    top: 20px;
-    z-index: 100;
 }
 
 .logo {
@@ -251,6 +248,71 @@ body {
     font-size: 0.9rem;
 }
 
+.filter-buttons {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.filter-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+}
+
+.filter-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--accent-color);
+}
+
+.filter-btn.active {
+    background: var(--accent-color);
+    color: white;
+    border-color: var(--accent-color);
+}
+
+.tooltip-bubble {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.15));
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 12px;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    position: relative;
+    backdrop-filter: blur(10px);
+    animation: pulse 2s ease-in-out infinite;
+    margin-bottom: 1rem;
+    width: fit-content;
+}
+
+.tooltip-bubble::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 20px;
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 8px solid rgba(59, 130, 246, 0.3);
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 0.8;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.02);
+    }
+}
+
 /* Metrics Table */
 .table-container {
     overflow-x: auto;
@@ -264,7 +326,7 @@ table {
 
 th, td {
     padding: 1rem;
-    text-align: left;
+    text-align: center;
     border-bottom: 1px solid var(--border-color);
 }
 
@@ -323,19 +385,6 @@ td {
     transition: width 0.5s ease;
 }
 
-/* Charts Grid */
-.charts-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-    gap: 2rem;
-}
-
-.chart-container {
-    position: relative;
-    height: 500px;
-    display: flex;
-    justify-content: center;
-}
 
 .chart-info {
     margin-top: 1.5rem;
@@ -378,6 +427,8 @@ td {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    overflow-x: auto; /* 가로 스크롤 허용 */
+    padding-bottom: 0.5rem; /* 스크롤바 공간 확보 */
 }
 
 .heatmap-label {
@@ -386,18 +437,22 @@ td {
     gap: 8px;
     font-size: 0.9rem;
     color: var(--text-secondary);
+    position: sticky; /* 레이블은 고정 */
+    left: 0;
 }
 
 .heatmap-grid {
     display: grid;
     grid-template-columns: repeat(24, 1fr); /* 24 Hours */
     gap: 2px;
+    min-width: 600px; /* 최소 너비 설정 */
 }
 
 .heatmap-day-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr); /* 7 Days */
     gap: 4px;
+    min-width: 300px; /* 최소 너비 설정 */
 }
 
 .heatmap-day-cell {
@@ -476,6 +531,64 @@ td {
 
 .keyword-chip:hover {
     transform: translateY(-2px);
+}
+
+/* Recent Videos */
+.recent-videos-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.channel-recent-videos {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.recent-videos-header {
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.recent-videos-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.recent-videos-table thead th {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.recent-videos-table tbody tr {
+    transition: background 0.2s;
+}
+
+.recent-videos-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.recent-videos-table tbody td {
+    padding: 0.75rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.video-title-cell {
+    max-width: 300px;
+}
+
+.video-title-text {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-align: left;
+    line-height: 1.4;
 }
 
 /* Compact Video Cards */
@@ -700,5 +813,92 @@ td {
     
     .video-thumbnail-compact {
         width: 100%;
+    }
+}
+
+/* Overall Score & Ranking */
+.overall-score-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.score-card {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: transform 0.2s;
+}
+
+.score-card:hover {
+    transform: translateY(-5px);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.score-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.rank-badge {
+    font-size: 2rem;
+    font-weight: 800;
+    min-width: 50px;
+    text-align: center;
+}
+
+.channel-info {
+    flex: 1;
+}
+
+.channel-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.total-score {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.score-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.score-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.score-item span {
+    width: 40px;
+}
+
+.score-bar {
+    flex: 1;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.score-bar .fill {
+    height: 100%;
+    border-radius: 3px;
+}
+
+@media (max-width: 768px) {
+    .overall-score-grid {
+        grid-template-columns: 1fr;
     }
 }
