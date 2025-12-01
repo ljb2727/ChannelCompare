@@ -1,0 +1,19 @@
+# API Keys (보안)
+*.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# 임시 파일
+*.tmp
+*.bak
