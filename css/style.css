@@ -516,6 +516,7 @@ td {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+    overflow-x: auto;
 }
 
 .recent-videos-header {
@@ -1031,5 +1032,32 @@ td {
     
     .radar-info {
         width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    /* 히트맵 모바일 최적화 */
+    .channel-heatmap {
+        overflow-x: scroll;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .heatmap-grid {
+        grid-template-columns: repeat(24, 14px);
+        gap: 1px;
+    }
+    
+    .heatmap-day-grid {
+        grid-template-columns: repeat(7, 32px);
+        gap: 3px;
+    }
+    
+    .heatmap-day-cell {
+        font-size: 0.7rem;
+    }
+    
+    /* 차트 높이 조정 */
+    .chart-container {
+        height: 400px;
     }
 }
